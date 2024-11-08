@@ -54,8 +54,23 @@ async function searchImages() {
             }
         } catch (error) {
             console.error('Error:', error);
-            // Continue to the next iteration instead of breaking the loop
-            continue;
+            // Retry logic: Attempt to retry fetching the failed batch once
+            try {
+                console.log(`Retrying batch ${i}...`);
+                const response = await fetch(`/api/search?query=${prompt}&start=${i}`);
+                if (!response.ok) {
+                    throw new Error(`Retry failed for batch ${i}: ${response.statusText}`);
+                }
+                const data = await response.json();
+                if (data.items && data.items.length > 0) {
+                    images.push(...data.items);
+                    console.log(`Retry Batch ${i}: Received ${data.items.length} images`);
+                } else {
+                    console.warn(`Retry Batch ${i}: No items found.`);
+                }
+            } catch (retryError) {
+                console.error('Retry Error:', retryError);
+            }
         }
     }
 
