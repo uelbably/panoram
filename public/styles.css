@@ -1,0 +1,34 @@
+/* Style the search container to hold the input and button nicely */
+.search-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-top: 20px; /* Adjust as needed */
+}
+
+/* Style the input box */
+#prompt {
+    width: 300px; /* Adjust the width to fit well */
+    padding: 10px;
+    font-size: 16px;
+    box-sizing: border-box; /* Ensures padding doesn't cause overflow */
+    border: 2px solid #ccc;
+    border-radius: 5px;
+}
+
+/* Style the search button */
+#searchButton {
+    padding: 10px 20px;
+    margin-left: 10px;
+    font-size: 16px;
+    background-color: #007BFF;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+/* Adjust button on hover */
+#searchButton:hover {
+    background-color: #0056b3;
+}
