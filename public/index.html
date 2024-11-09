@@ -31,6 +31,27 @@
             font-size: 16px;
             cursor: pointer;
         }
+        #images-container {
+            position: absolute;
+            top: 80px;
+            left: 10px;
+            right: 10px;
+            bottom: 10px;
+            overflow: auto;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .image-item {
+            width: calc(20% - 10px);
+            box-shadow: 0 0 5px rgba(0, 0, 0, 0.2);
+            border-radius: 8px;
+        }
+        .image-item img {
+            width: 100%;
+            height: auto;
+            border-radius: 8px;
+        }
     </style>
 </head>
 <body>
@@ -38,15 +59,15 @@
         <input type="text" id="prompt" placeholder="Enter your search prompt...">
         <button id="search-button">Search</button>
     </div>
+
+    <div id="images-container"></div>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three/examples/js/controls/OrbitControls.js"></script>
-    <script src="./script.js"></script>
-
     <script>
         const cache = new Map();
 
-        async function searchImages() {
+        async function searchImages(retries = 5) {
             const query = document.getElementById('prompt').value;
             if (!query) {
                 console.warn("Query is empty. Please enter a search prompt.");
@@ -60,26 +81,64 @@
                 return;
             }
 
-            try {
-                const response = await fetch(`/api/search?query=${encodeURIComponent(query)}&start=1`);
-                if (!response.ok) {
-                    throw new Error(`Failed to fetch images: ${response.statusText}`);
+            let allImages = [];
+            let attempt = 0;
+
+            // Pagination to fetch multiple pages
+            for (let page = 1; page <= 5; page++) {
+                let start = (page - 1) * 10 + 1; // Start parameter for pagination (1, 11, 21, ...)
+                while (attempt < retries) {
+                    try {
+                        const response = await fetch(`/api/search?query=${encodeURIComponent(query)}&start=${start}`);
+                        if (response.status === 429) {  // Too Many Requests
+                            console.warn(`Too many requests. Attempt ${attempt + 1} of ${retries}`);
+                            await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt) * 1000)); // Exponential backoff
+                            attempt++;
+                            continue;
+                        }
+                        if (!response.ok) {
+                            throw new Error(`Failed to fetch images: ${response.statusText}`);
+                        }
+
+                        const images = await response.json();
+
+                        // Add images to the list
+                        allImages = allImages.concat(images);
+
+                        break; // Exit retry loop on successful request
+                    } catch (error) {
+                        console.error('Error fetching images:', error);
+                        if (attempt === retries - 1) {
+                            console.error('Max retries reached. Could not fetch images for page', page);
+                        }
+                        attempt++;
+                    }
                 }
-                const images = await response.json();
 
-                // Cache the response
-                cache.set(query, images);
-
-                displayImages(images);
-            } catch (error) {
-                console.error('Error fetching images:', error);
+                attempt = 0; // Reset attempt for the next page
             }
+
+            // Cache the response
+            cache.set(query, allImages);
+
+            displayImages(allImages);
         }
 
         function displayImages(images) {
-            // Placeholder function to display images
-            console.log('Fetched images:', images);
-            // Add logic here to display images on the page
+            const imagesContainer = document.getElementById('images-container');
+            imagesContainer.innerHTML = ""; // Clear previous images
+
+            images.forEach(image => {
+                const imageItem = document.createElement('div');
+                imageItem.classList.add('image-item');
+
+                const img = document.createElement('img');
+                img.src = image.url;
+                img.alt = image.title;
+
+                imageItem.appendChild(img);
+                imagesContainer.appendChild(imageItem);
+            });
         }
 
         document.getElementById("search-button").addEventListener("click", function() {
