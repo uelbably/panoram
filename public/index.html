@@ -95,37 +95,44 @@
             let allImages = [];
             let attempt = 0;
 
-            // Fetch all images at once to avoid re-rendering
-            while (attempt < retries) {
-                try {
-                    const response = await fetch(`/api/search?query=${encodeURIComponent(query)}&start=1`);
-                    if (response.status === 429) {  // Too Many Requests
-                        console.warn(`Too many requests. Attempt ${attempt + 1} of ${retries}`);
-                        await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt) * 1000)); // Exponential backoff
+            // Fetch multiple pages of results to get at least 100 images
+            for (let start = 1; start <= 100; start += 10) { // Get up to 100 images by fetching ten pages (limit 10 per page)
+                while (attempt < retries) {
+                    try {
+                        const response = await fetch(`/api/search?query=${encodeURIComponent(query)}&start=${start}`);
+                        if (response.status === 429) {  // Too Many Requests
+                            console.warn(`Too many requests. Attempt ${attempt + 1} of ${retries}`);
+                            await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt) * 1000)); // Exponential backoff
+                            attempt++;
+                            continue;
+                        }
+                        if (!response.ok) {
+                            throw new Error(`Failed to fetch images: ${response.statusText}`);
+                        }
+
+                        const images = await response.json();
+
+                        // Add images to the list
+                        allImages = allImages.concat(images);
+
+                        break; // Exit retry loop on successful request
+                    } catch (error) {
+                        console.error('Error fetching images:', error);
+                        if (attempt === retries - 1) {
+                            console.error('Max retries reached. Could not fetch images for page', start);
+                        }
                         attempt++;
-                        continue;
                     }
-                    if (!response.ok) {
-                        throw new Error(`Failed to fetch images: ${response.statusText}`);
-                    }
-
-                    allImages = await response.json();
-
-                    // Display all images at once
-                    displayImages(allImages);
-
-                    break; // Exit retry loop on successful request
-                } catch (error) {
-                    console.error('Error fetching images:', error);
-                    if (attempt === retries - 1) {
-                        console.error('Max retries reached. Could not fetch images');
-                    }
-                    attempt++;
                 }
+
+                attempt = 0; // Reset attempt for the next page
             }
 
             // Cache the response
             cache.set(query, allImages);
+
+            // Display all images at once
+            displayImages(allImages);
         }
 
         function displayImages(images) {
