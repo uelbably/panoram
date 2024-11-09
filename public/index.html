@@ -117,7 +117,7 @@
                         allImages = allImages.concat(images);
 
                         // Display images as they are fetched
-                        displayImages(images);
+                        displayImages(allImages);
 
                         break; // Exit retry loop on successful request
                     } catch (error) {
@@ -144,18 +144,18 @@
 
             const circleRadius = 500;
             const imageSize = 80;
-            const layers = 5;
-            const imagesPerLayer = Math.ceil(images.length / layers); // Dividing into five layers for higher density
+            const layers = Math.ceil(Math.sqrt(images.length)); // Calculate the number of layers dynamically based on the number of images
+            const imagesPerLayer = Math.ceil(images.length / layers); // Dividing dynamically for higher density
 
             let imageIndex = 0;
             for (let layer = 0; layer < layers; layer++) {
-                const radius = circleRadius - layer * 100;
+                const radius = circleRadius - layer * (imageSize + 10);
                 const angleStep = (2 * Math.PI) / imagesPerLayer;
                 for (let i = 0; i < imagesPerLayer && imageIndex < images.length; i++) {
                     const angle = i * angleStep;
                     const x = radius * Math.cos(angle);
                     const y = radius * Math.sin(angle);
-                    const z = (Math.random() - 0.5) * 30; // Add slight depth variation, reduced for a tighter circle
+                    const z = (Math.random() - 0.5) * 50; // Add slight depth variation, reduced for a tighter circle
 
                     const textureLoader = new THREE.TextureLoader();
                     textureLoader.load(images[imageIndex].url, (texture) => {
