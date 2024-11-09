@@ -143,26 +143,31 @@
             scene.add(ambientLight);
 
             const radius = 800;
-            const angleStep = (2 * Math.PI) / images.length;
+            const layers = Math.ceil(Math.sqrt(images.length));
+            let index = 0;
 
-            images.forEach((image, index) => {
-                const textureLoader = new THREE.TextureLoader();
-                textureLoader.load(image.url, (texture) => {
-                    const material = new THREE.MeshBasicMaterial({ map: texture });
-                    const geometry = new THREE.PlaneGeometry(150, 100);
-                    const plane = new THREE.Mesh(geometry, material);
+            for (let layer = 0; layer < layers; layer++) {
+                const layerRadius = radius - (layer * 150);
+                const angleStep = (2 * Math.PI) / (images.length / layers);
+                for (let i = 0; i < images.length / layers && index < images.length; i++, index++) {
+                    const textureLoader = new THREE.TextureLoader();
+                    textureLoader.load(images[index].url, (texture) => {
+                        const material = new THREE.MeshBasicMaterial({ map: texture });
+                        const geometry = new THREE.PlaneGeometry(150, 100);
+                        const plane = new THREE.Mesh(geometry, material);
 
-                    // Arrange planes in a circular pattern
-                    const angle = index * angleStep;
-                    plane.position.set(
-                        radius * Math.cos(angle),
-                        radius * Math.sin(angle),
-                        0
-                    );
-                    plane.lookAt(new THREE.Vector3(0, 0, 0)); // Make each plane face the center
-                    scene.add(plane);
-                });
-            });
+                        // Arrange planes in layers to form a filled circle pattern
+                        const angle = i * angleStep;
+                        plane.position.set(
+                            layerRadius * Math.cos(angle),
+                            layerRadius * Math.sin(angle),
+                            -layer * 50
+                        );
+                        plane.lookAt(new THREE.Vector3(0, 0, 0)); // Make each plane face the center
+                        scene.add(plane);
+                    });
+                }
+            }
 
             controls.update();
         }
