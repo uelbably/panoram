@@ -146,25 +146,30 @@
 
             const circleRadius = 500;
             const imageSize = 80;
-            const angleStep = (2 * Math.PI) / images.length;
+            const rows = Math.ceil(Math.sqrt(images.length));
+            const cols = rows;
+            const spacing = 100;
 
-            images.forEach((image, index) => {
-                const textureLoader = new THREE.TextureLoader();
-                textureLoader.load(image.url, (texture) => {
-                    const material = new THREE.MeshBasicMaterial({ map: texture });
-                    const geometry = new THREE.PlaneGeometry(imageSize, imageSize);
-                    const plane = new THREE.Mesh(geometry, material);
-
-                    // Arrange planes in a circle pattern
-                    const angle = index * angleStep;
-                    const x = circleRadius * Math.cos(angle);
-                    const y = circleRadius * Math.sin(angle);
-
-                    plane.position.set(x, y, 0);
-                    plane.lookAt(new THREE.Vector3(0, 0, 0)); // Make each plane face the center
-                    scene.add(plane);
-                });
-            });
+            let imageIndex = 0;
+            for (let row = -Math.floor(rows / 2); row <= Math.floor(rows / 2); row++) {
+                for (let col = -Math.floor(cols / 2); col <= Math.floor(cols / 2); col++) {
+                    if (imageIndex >= images.length) break;
+                    const x = col * spacing;
+                    const y = row * spacing;
+                    if (Math.sqrt(x * x + y * y) <= circleRadius) {
+                        const textureLoader = new THREE.TextureLoader();
+                        textureLoader.load(images[imageIndex].url, (texture) => {
+                            const material = new THREE.MeshBasicMaterial({ map: texture });
+                            const geometry = new THREE.PlaneGeometry(imageSize, imageSize);
+                            const plane = new THREE.Mesh(geometry, material);
+                            plane.position.set(x, y, 0);
+                            plane.lookAt(new THREE.Vector3(0, 0, 0));
+                            scene.add(plane);
+                        });
+                        imageIndex++;
+                    }
+                }
+            }
 
             controls.update();
         }
