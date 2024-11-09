@@ -32,6 +32,18 @@
             font-size: 16px;
             cursor: pointer;
         }
+        #metadata-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            background: rgba(0, 0, 0, 0.7);
+            color: #ffffff;
+            padding: 10px;
+            border-radius: 5px;
+            display: none;
+            pointer-events: none;
+            z-index: 20;
+        }
         canvas {
             display: block;
         }
@@ -42,12 +54,14 @@
         <input type="text" id="prompt" placeholder="Enter your search prompt...">
         <button id="search-button">Search</button>
     </div>
+    <div id="metadata-overlay"></div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three/examples/js/controls/OrbitControls.js"></script>
     <script>
         const cache = new Map();
-        let scene, camera, renderer, controls;
+        let scene, camera, renderer, controls, raycaster, mouse;
+        const planes = [];
 
         init3DScene();
 
@@ -68,6 +82,33 @@
             // Lighting
             const ambientLight = new THREE.AmbientLight(0xffffff, 1);
             scene.add(ambientLight);
+
+            // Raycaster for detecting mouse hover
+            raycaster = new THREE.Raycaster();
+            mouse = new THREE.Vector2();
+
+            // Metadata overlay
+            const metadataOverlay = document.getElementById('metadata-overlay');
+
+            // Event listeners for mouse movement
+            window.addEventListener('mousemove', (event) => {
+                mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+                mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+                raycaster.setFromCamera(mouse, camera);
+                const intersects = raycaster.intersectObjects(planes);
+
+                if (intersects.length > 0) {
+                    const intersectedPlane = intersects[0].object;
+                    const metadata = intersectedPlane.userData.metadata;
+                    metadataOverlay.style.display = 'block';
+                    metadataOverlay.style.top = `${event.clientY + 10}px`;
+                    metadataOverlay.style.left = `${event.clientX + 10}px`;
+                    metadataOverlay.innerHTML = `Title: ${metadata.title}<br>Description: ${metadata.description}`;
+                } else {
+                    metadataOverlay.style.display = 'none';
+                }
+            });
 
             animate();
         }
@@ -140,6 +181,7 @@
             while (scene.children.length > 1) { // Keep the ambient light
                 scene.remove(scene.children[1]);
             }
+            planes.length = 0;
 
             const circleRadius = 500;
             const imageSize = 80;
@@ -163,7 +205,12 @@
                         const plane = new THREE.Mesh(geometry, material);
                         plane.position.set(x, y, z);
                         plane.lookAt(camera.position); // Make each plane always face the camera
+                        plane.userData.metadata = {
+                            title: images[imageIndex].title || 'No Title',
+                            description: images[imageIndex].description || 'No Description'
+                        };
                         scene.add(plane);
+                        planes.push(plane);
                     });
                     imageIndex++;
                 }
