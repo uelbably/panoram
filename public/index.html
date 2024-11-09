@@ -116,6 +116,9 @@
                         // Add images to the list
                         allImages = allImages.concat(images);
 
+                        // Display images as they are fetched
+                        displayImages(images);
+
                         break; // Exit retry loop on successful request
                     } catch (error) {
                         console.error('Error fetching images:', error);
@@ -131,18 +134,13 @@
 
             // Cache the response
             cache.set(query, allImages);
-
-            displayImages(allImages);
         }
 
         function displayImages(images) {
             // Clear the previous scene objects (if any)
-            while (scene.children.length > 0) {
-                scene.remove(scene.children[0]);
+            while (scene.children.length > 1) { // Keep the ambient light
+                scene.remove(scene.children[1]);
             }
-
-            const ambientLight = new THREE.AmbientLight(0xffffff, 1);
-            scene.add(ambientLight);
 
             const circleRadius = 500;
             const imageSize = 80;
