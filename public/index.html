@@ -145,18 +145,19 @@
             scene.add(ambientLight);
 
             const circleRadius = 500;
-            const imageSize = 100;
-            const imagesPerLayer = Math.ceil(images.length / 3); // Dividing into three layers
+            const imageSize = 80;
+            const layers = 5;
+            const imagesPerLayer = Math.ceil(images.length / layers); // Dividing into five layers for higher density
 
             let imageIndex = 0;
-            for (let layer = 0; layer < 3; layer++) {
-                const radius = circleRadius - layer * 150;
+            for (let layer = 0; layer < layers; layer++) {
+                const radius = circleRadius - layer * 100;
                 const angleStep = (2 * Math.PI) / imagesPerLayer;
                 for (let i = 0; i < imagesPerLayer && imageIndex < images.length; i++) {
                     const angle = i * angleStep;
                     const x = radius * Math.cos(angle);
                     const y = radius * Math.sin(angle);
-                    const z = (Math.random() - 0.5) * 200; // Add slight depth variation
+                    const z = (Math.random() - 0.5) * 30; // Add slight depth variation, reduced for a tighter circle
 
                     const textureLoader = new THREE.TextureLoader();
                     textureLoader.load(images[imageIndex].url, (texture) => {
