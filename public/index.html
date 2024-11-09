@@ -31,26 +31,8 @@
             font-size: 16px;
             cursor: pointer;
         }
-        #images-container {
-            position: absolute;
-            top: 80px;
-            left: 10px;
-            right: 10px;
-            bottom: 10px;
-            overflow: auto;
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-        }
-        .image-item {
-            width: calc(20% - 10px);
-            box-shadow: 0 0 5px rgba(0, 0, 0, 0.2);
-            border-radius: 8px;
-        }
-        .image-item img {
-            width: 100%;
-            height: auto;
-            border-radius: 8px;
+        canvas {
+            display: block;
         }
     </style>
 </head>
@@ -60,12 +42,39 @@
         <button id="search-button">Search</button>
     </div>
 
-    <div id="images-container"></div>
-    
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three/examples/js/controls/OrbitControls.js"></script>
     <script>
         const cache = new Map();
+        let scene, camera, renderer, controls;
+
+        init3DScene();
+
+        function init3DScene() {
+            // Set up the 3D scene
+            scene = new THREE.Scene();
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            renderer = new THREE.WebGLRenderer();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            document.body.appendChild(renderer.domElement);
+
+            // Set up OrbitControls to allow camera movement
+            controls = new THREE.OrbitControls(camera, renderer.domElement);
+            camera.position.set(0, 0, 50);
+            controls.update();
+
+            // Lighting
+            const light = new THREE.AmbientLight(0xffffff);
+            scene.add(light);
+
+            animate();
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            controls.update();
+            renderer.render(scene, camera);
+        }
 
         async function searchImages(retries = 5) {
             const query = document.getElementById('prompt').value;
@@ -125,20 +134,26 @@
         }
 
         function displayImages(images) {
-            const imagesContainer = document.getElementById('images-container');
-            imagesContainer.innerHTML = ""; // Clear previous images
+            // Clear the previous scene objects (if any)
+            while (scene.children.length > 0) {
+                scene.remove(scene.children[0]);
+            }
 
-            images.forEach(image => {
-                const imageItem = document.createElement('div');
-                imageItem.classList.add('image-item');
+            const spacing = 20;
+            let xPos = -Math.floor(images.length / 2) * spacing;
 
-                const img = document.createElement('img');
-                img.src = image.url;
-                img.alt = image.title;
-
-                imageItem.appendChild(img);
-                imagesContainer.appendChild(imageItem);
+            images.forEach((image, index) => {
+                const textureLoader = new THREE.TextureLoader();
+                textureLoader.load(image.url, (texture) => {
+                    const material = new THREE.MeshBasicMaterial({ map: texture });
+                    const geometry = new THREE.PlaneGeometry(15, 10);
+                    const plane = new THREE.Mesh(geometry, material);
+                    plane.position.set(xPos + (index * spacing), 0, 0);
+                    scene.add(plane);
+                });
             });
+
+            controls.update();
         }
 
         document.getElementById("search-button").addEventListener("click", function() {
@@ -152,6 +167,12 @@
                 console.log("Enter key pressed");
                 searchImages();
             }
+        });
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
         });
     </script>
 </body>
