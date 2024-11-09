@@ -60,12 +60,12 @@
 
             // Set up OrbitControls to allow camera movement
             controls = new THREE.OrbitControls(camera, renderer.domElement);
-            camera.position.set(0, 0, 50);
+            camera.position.set(0, 0, 500);
             controls.update();
 
             // Lighting
-            const light = new THREE.AmbientLight(0xffffff);
-            scene.add(light);
+            const ambientLight = new THREE.AmbientLight(0xffffff, 1);
+            scene.add(ambientLight);
 
             animate();
         }
@@ -139,16 +139,27 @@
                 scene.remove(scene.children[0]);
             }
 
-            const spacing = 20;
-            let xPos = -Math.floor(images.length / 2) * spacing;
+            const ambientLight = new THREE.AmbientLight(0xffffff, 1);
+            scene.add(ambientLight);
+
+            const spacing = 300;
+            const zRange = 1000;
+            const xRange = 1500;
+            const yRange = 1000;
 
             images.forEach((image, index) => {
                 const textureLoader = new THREE.TextureLoader();
                 textureLoader.load(image.url, (texture) => {
                     const material = new THREE.MeshBasicMaterial({ map: texture });
-                    const geometry = new THREE.PlaneGeometry(15, 10);
+                    const geometry = new THREE.PlaneGeometry(150, 100);
                     const plane = new THREE.Mesh(geometry, material);
-                    plane.position.set(xPos + (index * spacing), 0, 0);
+
+                    // Randomly distribute planes in 3D space
+                    plane.position.set(
+                        (Math.random() - 0.5) * xRange,
+                        (Math.random() - 0.5) * yRange,
+                        (Math.random() - 0.5) * zRange
+                    );
                     scene.add(plane);
                 });
             });
