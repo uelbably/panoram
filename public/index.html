@@ -24,7 +24,7 @@
             width: 300px;
             padding: 5px;
             font-size: 16px;
-            box-sizing: border-box; /* Added to ensure proper sizing without overflow */
+            box-sizing: border-box;
         }
         #search-button {
             padding: 6px 12px;
@@ -44,13 +44,53 @@
     <script src="./script.js"></script>
 
     <script>
+        const cache = new Map();
+
+        async function searchImages() {
+            const query = document.getElementById('prompt').value;
+            if (!query) {
+                console.warn("Query is empty. Please enter a search prompt.");
+                return;
+            }
+
+            // Check if the query is in the cache
+            if (cache.has(query)) {
+                console.log("Serving from cache");
+                displayImages(cache.get(query));
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/search?query=${encodeURIComponent(query)}&start=1`);
+                if (!response.ok) {
+                    throw new Error(`Failed to fetch images: ${response.statusText}`);
+                }
+                const images = await response.json();
+
+                // Cache the response
+                cache.set(query, images);
+
+                displayImages(images);
+            } catch (error) {
+                console.error('Error fetching images:', error);
+            }
+        }
+
+        function displayImages(images) {
+            // Placeholder function to display images
+            console.log('Fetched images:', images);
+            // Add logic here to display images on the page
+        }
+
         document.getElementById("search-button").addEventListener("click", function() {
+            console.log("Search button clicked");
             searchImages();
         });
 
         document.getElementById("prompt").addEventListener("keypress", function(event) {
             if (event.key === "Enter") {
                 event.preventDefault();
+                console.log("Enter key pressed");
                 searchImages();
             }
         });
