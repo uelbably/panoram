@@ -146,31 +146,34 @@
 
             const circleRadius = 500;
             const imageSize = 100;
-            const layers = 3;
-            const imagesPerLayer = Math.ceil(images.length / layers);
+            const angleStep = Math.PI / 8; // Smaller step for more density
 
-            let imageIndex = 0;
-            for (let layer = 0; layer < layers; layer++) {
-                const radius = circleRadius - layer * 150;
-                const angleStep = (2 * Math.PI) / imagesPerLayer;
-                for (let i = 0; i < imagesPerLayer && imageIndex < images.length; i++) {
-                    const angle = i * angleStep;
-                    const x = radius * Math.cos(angle);
-                    const y = radius * Math.sin(angle);
-                    const z = (Math.random() - 0.5) * 200; // Add slight depth variation
+            let angle = 0;
+            let depthOffset = -150; // Start depth offset
 
-                    const textureLoader = new THREE.TextureLoader();
-                    textureLoader.load(images[imageIndex].url, (texture) => {
-                        const material = new THREE.MeshBasicMaterial({ map: texture });
-                        const geometry = new THREE.PlaneGeometry(imageSize, imageSize);
-                        const plane = new THREE.Mesh(geometry, material);
-                        plane.position.set(x, y, z);
-                        plane.lookAt(new THREE.Vector3(0, 0, 0)); // Make each plane face the camera
-                        scene.add(plane);
-                    });
-                    imageIndex++;
+            images.forEach((image, index) => {
+                const radius = circleRadius + (index % 5) * 20; // Vary radius slightly for density
+                const x = radius * Math.cos(angle);
+                const y = radius * Math.sin(angle);
+                const z = depthOffset;
+
+                const textureLoader = new THREE.TextureLoader();
+                textureLoader.load(image.url, (texture) => {
+                    const material = new THREE.MeshBasicMaterial({ map: texture });
+                    const geometry = new THREE.PlaneGeometry(imageSize, imageSize);
+                    const plane = new THREE.Mesh(geometry, material);
+                    plane.position.set(x, y, z);
+                    plane.lookAt(new THREE.Vector3(0, 0, 0)); // Make each plane face the camera
+                    scene.add(plane);
+                });
+
+                // Update angle and depthOffset for next image
+                angle += angleStep;
+                if (angle >= 2 * Math.PI) {
+                    angle = 0;
+                    depthOffset += 100; // Move to the next layer
                 }
-            }
+            });
 
             controls.update();
         }
