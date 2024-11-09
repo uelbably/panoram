@@ -145,31 +145,37 @@
             scene.add(ambientLight);
 
             const circleRadius = 600;
-            const imagesPerLayer = Math.ceil(Math.sqrt(images.length));
-            let index = 0;
+            const angleStep = (2 * Math.PI) / images.length;
+            const layerSpacing = 150;
+            let currentLayer = 0;
+            let imagesInLayer = 0;
 
-            for (let layer = 0; layer < imagesPerLayer; layer++) {
-                const layerRadius = circleRadius - (layer * 100);
-                const angleStep = (2 * Math.PI) / imagesPerLayer;
-                for (let i = 0; i < imagesPerLayer && index < images.length; i++, index++) {
-                    const textureLoader = new THREE.TextureLoader();
-                    textureLoader.load(images[index].url, (texture) => {
-                        const material = new THREE.MeshBasicMaterial({ map: texture });
-                        const geometry = new THREE.PlaneGeometry(100, 100);
-                        const plane = new THREE.Mesh(geometry, material);
+            images.forEach((image, index) => {
+                const textureLoader = new THREE.TextureLoader();
+                textureLoader.load(image.url, (texture) => {
+                    const material = new THREE.MeshBasicMaterial({ map: texture });
+                    const geometry = new THREE.PlaneGeometry(100, 100);
+                    const plane = new THREE.Mesh(geometry, material);
 
-                        // Arrange planes in layers to form a filled circle pattern
-                        const angle = i * angleStep;
-                        plane.position.set(
-                            layerRadius * Math.cos(angle),
-                            layerRadius * Math.sin(angle),
-                            0
-                        );
-                        plane.lookAt(new THREE.Vector3(0, 0, 0)); // Make each plane face the center
-                        scene.add(plane);
-                    });
-                }
-            }
+                    // Calculate the layer and position for the plane to densely fill the circle
+                    if (imagesInLayer >= Math.pow(currentLayer + 1, 2)) {
+                        currentLayer++;
+                        imagesInLayer = 0;
+                    }
+                    const layerRadius = circleRadius - (currentLayer * layerSpacing);
+                    const angle = imagesInLayer * angleStep;
+
+                    plane.position.set(
+                        layerRadius * Math.cos(angle),
+                        layerRadius * Math.sin(angle),
+                        0
+                    );
+                    plane.lookAt(new THREE.Vector3(0, 0, 0)); // Make each plane face the center
+                    scene.add(plane);
+
+                    imagesInLayer++;
+                });
+            });
 
             controls.update();
         }
